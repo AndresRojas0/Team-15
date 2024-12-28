@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'curso',
     'materia',
     'alumno',
+    'planificacion',
 ]
 
 REST_FRAMEWORK = {
