@@ -1,5 +1,6 @@
 import secrets
 import string
+from django.shortcuts import get_object_or_404
 import requests
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -9,10 +10,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from autenticacion.models import CustomUser
 from autenticacion.permissions import IsAdminUser
-from .serializer import CustomUserSerializer
+from .serializer import CustomUserSerializer, PasswordResetSerializer
 from rest_framework import generics
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import AccessToken
+from django.core.mail import send_mail, EmailMessage
+from django.urls import reverse
 
 class GoogleOAuthService(APIView):
     client_id = settings.GOOGLE_OAUTH_CLIENT_ID
@@ -97,8 +100,12 @@ class BasicLoginView(APIView):
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
         if user.check_password(password):
+            if not user.email_verified:
+                return Response({"error": "Email not verified"}, status=status.HTTP_401_UNAUTHORIZED)
+
             token = user.get_token()
             user_data = CustomUserSerializer(user).data
+
             return Response({
                 'refresh_token': str(token),
                 'access_token': str(token.access_token),
@@ -107,6 +114,8 @@ class BasicLoginView(APIView):
         else:
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
         
+
+from django.core.mail import EmailMessage
 
 class RegisterUserView(generics.CreateAPIView):
     queryset = CustomUser.objects.all()
@@ -120,11 +129,38 @@ class RegisterUserView(generics.CreateAPIView):
         token = user.get_token()
         user_data = CustomUserSerializer(user).data
 
+        # Crear el enlace de verificación
+        verification_url = request.build_absolute_uri(
+            reverse('verify-email', kwargs={'token': user.email_verification_token})
+        )
+
+        # Crear el contenido HTML del correo
+        html_content = f"""
+        <html>
+        <body>
+            <h1>¡Bienvenido a PalProfe!</h1>
+            <p>Gracias por registrarte. Por favor, hace clic en el siguiente enlace para confirmar tu correo electrónico:</p>
+            <a href="{verification_url}">Confirmar correo electrónico</a>
+            <br><br>
+            <img src="https://administracionescolar.mx/wp-content/uploads/2023/03/6911306-scaled-2560x1280.jpg" alt="Bienvenido" style="width:300px;height:auto;">
+        </body>
+        </html>
+        """
+
+        # Enviar el correo de verificación
+        email = EmailMessage(
+            'Confirma tu correo electrónico',
+            html_content,
+            settings.EMAIL_HOST_USER,
+            [user.email],
+        )
+        email.content_subtype = 'html'  # Definir el contenido como HTML
+        email.send()
+
         return Response({
-            'refresh_token': str(token),
-            'access_token': str(token.access_token),
-            'user': user_data
+            'message': 'Se ha enviado un correo de verificación a su dirección de correo electrónico. Por favor, verifique su correo para completar el registro.'
         }, status=status.HTTP_201_CREATED)
+    
     
     
 class UpdateUserView(generics.UpdateAPIView):
@@ -269,3 +305,81 @@ class TokenDataView(APIView):
             return Response({'error': 'User is inactive'}, status=status.HTTP_400_BAD_REQUEST)
         
         return Response({'user_id': user_id, 'role': role}, status=status.HTTP_200_OK)
+    
+
+class VerifyEmailView(APIView):
+    def get(self, request, token):
+        user = get_object_or_404(CustomUser, email_verification_token=token)
+        user.email_verified = True
+        user.email_verification_token = None
+        user.save()
+        return Response({'message': 'Email verified successfully'}, status=status.HTTP_200_OK)
+    
+
+class RecoverPasswordView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user = get_object_or_404(CustomUser, email=email)
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'User with this email does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            # Generar un nuevo token de recuperación de contraseña
+            alphabet = string.ascii_letters + string.digits
+            recovery_token = ''.join(secrets.choice(alphabet) for i in range(32))
+            user.recovery_token = recovery_token
+            user.save()
+            
+            # Crear el enlace de recuperación de contraseña
+            recovery_url = request.build_absolute_uri(
+                reverse('reset-password', kwargs={'token': recovery_token})
+            )
+            
+            # Crear el contenido HTML del correo
+            html_content = f"""
+            <html>
+            <body>
+                <h1>Recuperación de contraseña</h1>
+                <p>Haz clic en el siguiente enlace para restablecer tu contraseña:</p>
+                <a href="{recovery_url}">Restablecer contraseña</a>
+            </body>
+            </html>
+            """
+            
+            # Enviar el correo de recuperación de contraseña
+            email = EmailMessage(
+                'Recuperación de contraseña',
+                html_content,
+                settings.EMAIL_HOST_USER,
+                [user.email],
+            )
+            email.content_subtype = 'html'  # Definir el contenido como HTML
+            email.send()
+            
+            return Response({'message': 'Password recovery email sent'}, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({'error': 'An error occurred while processing your request'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+class PasswordResetView(APIView):
+    def post(self, request, token):
+        try:
+            user = CustomUser.objects.get(recovery_token=token)
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'Invalid or expired token'}, status=status.HTTP_404_NOT_FOUND)
+            
+        serializer = PasswordResetSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            user.set_password(serializer.validated_data['new_password'])
+            user.recovery_token = None
+            user.save()
+            
+            return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
