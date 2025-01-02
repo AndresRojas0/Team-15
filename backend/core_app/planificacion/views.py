@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Planificacion
 from .serializers import PlanificacionSerializer, RegisterPlanificacionSerializer
 from curso.models import Curso
+from materia.models import Materia
 from institucion.models import Institucion
 import logging
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -52,16 +53,13 @@ class ProcessPlanificacionExcelView(generics.CreateAPIView):
             df = pd.read_excel(file)
             planificaciones = []
             for _, row in df.iterrows():
-                tipo = row['tipo']
-                contenido = row['contenido']
-                metodologia = row['metodologia']
-                anotaciones = row['anotaciones']
+                nombre_unidad = row['nombre_unidad']
+                nombre_tema = row['nombre_tema']
                 planificacion_data = {
                     'curso_id': curso_id,
-                    'tipo': tipo,
-                    'contenido': contenido,
-                    'metodologia': metodologia,
-                    'anotaciones': anotaciones
+                    'materia_id': materia_id,
+                    'nombre_unidad': nombre_unidad,
+                    'nombre_tema': nombre_tema
                 }
                 planificaciones.append(planificacion_data)
             return Response({
