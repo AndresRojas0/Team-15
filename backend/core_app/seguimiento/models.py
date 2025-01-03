@@ -1,10 +1,10 @@
 from django.db import models
-from curso.models import Curso
 from alumno.models import Alumno
+from planificacion.models import Planificacion
 
 class Seguimiento(models.Model):
-    curso = models.ForeignKey(Curso, on_delete=models.CASCADE, related_name='seguimientos')
     alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE, related_name='seguimientos')
+    planificacion = models.ForeignKey(Planificacion, on_delete=models.CASCADE, related_name='seguimientos')
     calificaciones = models.IntegerField(null = True)
     asistencia = models.CharField(max_length=255)
     anotaciones = models.CharField(max_length=255)
