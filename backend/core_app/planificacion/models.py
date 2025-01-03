@@ -1,5 +1,5 @@
 from django.db import models
-from materia.mmodels import Materia
+from materia.models import Materia
 
 class Planificacion(models.Model):
     materia = models.ForeignKey(Materia, on_delete=models.CASCADE, related_name='planificaciones')
