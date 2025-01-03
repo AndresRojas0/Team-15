@@ -1,15 +1,15 @@
 from rest_framework import serializers
 from .models import Seguimiento
-from curso.models import Curso
 from alumno.models import Alumno
+from planificacion.models import Planificacion
 
 class SeguimientoSerializer(serializers.ModelSerializer):
-    curso_id = serializers.PrimaryKeyRelatedField(queryset=Curso.objects.all(), source='curso')
-    alumno_id = serializers.PrimaryKeyRelatedField(queryset=Curso.objects.all(), source='alumno')
+    alumno_id = serializers.PrimaryKeyRelatedField(queryset=Alumno.objects.all(), source='alumno')
+    planificacion_id = serializers.PrimaryKeyRelatedField(queryset=Planificacion.objects.all(), source='planificacion')
 
     class Meta:
         model = Seguimiento
-        fields = ['id', 'curso_id', 'alumno_id', 'calificaciones', 'asistencia', 'anotaciones']
+        fields = ['id', 'alumno_id', 'planificacion_id', 'calificaciones', 'asistencia', 'anotaciones']
 
 class RegisterSeguimientoSerializer(serializers.Serializer):
     seguimientos = SeguimientoSerializer(many=True)
