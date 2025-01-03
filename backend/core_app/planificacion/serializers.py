@@ -1,15 +1,13 @@
 from rest_framework import serializers
 from .models import Planificacion
-from curso.models import Curso
 from materia.models import Materia
 
 class PlanificacionSerializer(serializers.ModelSerializer):
-    curso_id = serializers.PrimaryKeyRelatedField(queryset=Curso.objects.all(), source='curso')
     materia_id = serializers.PrimaryKeyRelatedField(queryset=Materia.objects.all(), source='materia')
 
     class Meta:
         model = Planificacion
-        fields = ['id', 'curso_id', 'materia_id', 'nombre_unidad', 'nombre_tema']
+        fields = ['id', 'materia_id', 'nombre_unidad', 'nombre_tema', 'fecha_inicio', 'fecha_fin']
 
 class RegisterPlanificacionSerializer(serializers.Serializer):
     planificaciones = PlanificacionSerializer(many=True)
