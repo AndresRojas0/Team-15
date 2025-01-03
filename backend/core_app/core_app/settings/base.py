@@ -11,11 +11,9 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from datetime import timedelta
-# from pathlib import Path
 from core_app.env import BASE_DIR, env
-# import environ
 import os
-
+import google.generativeai as genai
 
 # Initialize environment variables
 env.read_env(os.path.join(BASE_DIR, '.env'))
@@ -169,3 +167,20 @@ EMAIL_PORT = env('EMAIL_PORT')
 EMAIL_USE_TLS = env('EMAIL_USE_TLS')
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+
+
+# Configurar la API de Google Generative AI
+genai.configure(api_key=env('API_KEY_GOOGLE_GENERATIVE_AI'))
+
+GENERATION_CONFIG = {
+    "temperature": 1,
+    "top_p": 0.95,
+    "top_k": 40,
+    "max_output_tokens": 8192,
+    "response_mime_type": "text/plain",
+}
+
+MODEL = genai.GenerativeModel(
+    model_name="gemini-1.5-flash-8b",
+    generation_config=GENERATION_CONFIG,
+)
