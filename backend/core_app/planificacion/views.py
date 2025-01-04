@@ -1,22 +1,20 @@
 from io import BytesIO
-import os
-from xml.dom.minidom import Document
 from django.conf import settings
+from django.db import IntegrityError
 import docx
+import pdfplumber
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Planificacion
 from .serializers import PlanificacionSerializer, RegisterPlanificacionSerializer
 from curso.models import Curso
-from materia.models import Materia
-from institucion.models import Institucion
 import logging
 from rest_framework.parsers import MultiPartParser, FormParser
-import pandas as pd
-import google.generativeai as genai
+import json
 
 logger = logging.getLogger(__name__)
+
 
 class RegisterPlanificacionView(generics.CreateAPIView):
     queryset = Planificacion.objects.all()
@@ -27,13 +25,17 @@ class RegisterPlanificacionView(generics.CreateAPIView):
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            planificaciones = serializer.save()
+            planificacion = serializer.save()
             return Response({
-                'planificaciones': PlanificacionSerializer(planificaciones['planificaciones'], many=True).data
+                'planificacion_id': planificacion.id
             }, status=status.HTTP_201_CREATED)
+        except IntegrityError as e:
+            logger.error(f"IntegrityError occurred: {e}")
+            return Response({'error': 'La materia ya tiene una planificación.'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             logger.error(f"Error occurred: {e}")
             return Response({'error': 'An error occurred while processing your request.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class ListPlanificacionView(generics.ListAPIView):
     serializer_class = PlanificacionSerializer
@@ -42,9 +44,9 @@ class ListPlanificacionView(generics.ListAPIView):
     def get_queryset(self):
         user_id = self.request.user.id
         cursos = Curso.objects.filter(institucion__docente_id=user_id)
-        return Planificacion.objects.filter(curso__in=cursos)
-        
-        
+        return Planificacion.objects.filter(materia__curso__in=cursos)
+
+
 
 class WordFileProcessor(generics.CreateAPIView):
     parser_classes = [MultiPartParser, FormParser]
@@ -58,85 +60,84 @@ class WordFileProcessor(generics.CreateAPIView):
         try:
             doc = docx.Document(BytesIO(uploaded_file.read()))
 
-            # Extraer texto de la sección "APRENDIZAJES Y CONTENIDOS"
-            content = self.extract_relevant_content(doc)
+            # Extraer todo el contenido del documento
+            content = '\n'.join([para.text.strip() for para in doc.paragraphs])
 
-            if not content:
-                return Response({"error": "No se encontró la sección 'APRENDIZAJES Y CONTENIDOS' en el documento."}, 
-                                status=status.HTTP_400_BAD_REQUEST)
-
-            # Enviar el texto extraído a la API de Gemini para obtener temas y subtemas
             chat_session = settings.MODEL.start_chat(history=[])
-            response = chat_session.send_message(f"Por favor, extrae los temas y subtemas de APRENDIZAJES Y CONTENIDOS del siguiente texto:\n{content}")
+            response = chat_session.send_message(
+                f"Por favor, extrae los temas y subtemas de APRENDIZAJES Y CONTENIDOS del siguiente texto:\n{content}\n"
+                "Responde en formato JSON con la siguiente estructura: "
+                '{"temas": [{"tema": "nombre_tema", "subtemas": ["subtema1", "subtema2", ...] }, {...}]}'
+            )
 
-            gemini_response = self.process_gemini_response(response.text)
+            # Respuesta de la API
+            response_text = response.text
 
-            # Eliminar los primeros dos elementos de subtemas de cada tema (son irrelevantes, generan asteriscos)
-            filtered_response = []
-            for tema in gemini_response: # Esto se puede mejorar
-                tema["subtemas"] = tema["subtemas"][2:]  # Eliminar los primeros dos elementos
-                if tema["subtemas"]:  # Si hay subtemas después del corte
-                    filtered_response.append(tema)  # Agregar el tema solo si tiene subtemas
+            # Limpiar la respuesta de las marcas de bloque de código
+            # Elimina el marcador de inicio y fin del bloque de código
+            if response_text.startswith("```json"):
+                response_text = response_text[7:].strip()  # Eliminar "```json\n"
+            if response_text.endswith("```"):
+                response_text = response_text[:-3].strip()  # Eliminar "```"
 
+            try:
+                json_data = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                print(f"Error de parseo JSON: {e}")  # Depuración
+                return Response(
+                    {"error": "La respuesta de la API no es un JSON válido."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
-
-            return Response({
-                "temas": filtered_response
-            }, status=status.HTTP_200_OK)
+            return Response(json_data, status=status.HTTP_200_OK)
 
         except Exception as e:
-            logger.error(f"Error occurred: {e}", exc_info=True)
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    def extract_relevant_content(self, doc):
-        """
-        Extrae el contenido a partir de la sección que comienza con "APRENDIZAJES Y CONTENIDOS"
-        """
-        content = []
-        started = False
 
-        # Recorrer todos los párrafos del documento
-        for para in doc.paragraphs:
-            para_text = para.text.strip()
 
-            if not started:
-                # Buscar la palabra clave "APRENDIZAJES Y CONTENIDOS"
-                if "APRENDIZAJES Y CONTENIDOS" in para_text:
-                    started = True  # Comienza a extraer después de encontrar la sección
-            if started:
-                # Agregar los párrafos después de encontrar la sección
-                content.append(para_text)
+class PDFExtractTextView(generics.CreateAPIView):
+    parser_classes = [MultiPartParser, FormParser]
 
-        return '\n'.join(content)  # Devolver el contenido relevante como un solo string
+    def post(self, request, *args, **kwargs):
+        if 'file' not in request.FILES:
+            return Response({"error": "No se ha subido ningún archivo PDF."}, status=status.HTTP_400_BAD_REQUEST)
 
-    def process_gemini_response(self, gemini_text):
-        """
-        Procesar la respuesta de la API de Gemini para estructurarla en temas y subtemas.
-        """
-        temas = []
-        tema_actual = None
-        subtemas_actuales = []
+        uploaded_file = request.FILES['file']
 
-        lines = gemini_text.split('\n')
+        try:
+            text = self.extract_pdf_text(uploaded_file)
 
-        for line in lines:
-            line = line.strip()
-            if line.startswith("**") and line.endswith("**"):  # Identificar temas principales (Ej: "**Tema 1**")
-                if tema_actual:
-                    temas.append({
-                        "tema": tema_actual,
-                        "subtemas": subtemas_actuales
-                    })
-                tema_actual = line[2:-2]  # Extraer el nombre del tema (eliminando los asteriscos)
-                subtemas_actuales = []  # Reiniciar subtemas
-            elif line.startswith("*"):  # Identificar subtemas (Ej: "* Subtema 1")
-                subtemas_actuales.append(line[2:])  # Extraer el subtema (eliminando el asterisco y espacio)
+            chat_session = settings.MODEL.start_chat(history=[])
+            response = chat_session.send_message(
+                f"Por favor, extrae los temas y subtemas de APRENDIZAJES Y CONTENIDOS del siguiente texto:\n{text}\n"
+                "Responde en formato JSON con la siguiente estructura: "
+                '{"temas": [{"tema": "nombre_tema", "subtemas": ["subtema1", "subtema2", ...] }, {...}]}'
+            )
 
-        # Agregar el último tema al final
-        if tema_actual:
-            temas.append({
-                "tema": tema_actual,
-                "subtemas": subtemas_actuales
-            })
+            response_text = response.text
+            
+            if response_text.startswith("```json"):
+                response_text = response_text[7:].strip()
+            if response_text.endswith("```"):
+                response_text = response_text[:-3].strip()
 
-        return temas
+            try:
+                json_data = json.loads(response_text)
+            except json.JSONDecodeError as e:
+                return Response(
+                    {"error": "La respuesta de la API no es un JSON válido."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+            return Response(json_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def extract_pdf_text(self, pdf_file):
+        text = ""
+        with pdfplumber.open(pdf_file) as pdf:
+            for page in pdf.pages:
+                text += page.extract_text()  # Extraemos el texto de cada página
+        return text

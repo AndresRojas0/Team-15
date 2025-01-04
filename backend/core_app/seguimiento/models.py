@@ -4,7 +4,7 @@ from planificacion.models import Planificacion
 
 class Seguimiento(models.Model):
     alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE, related_name='seguimientos')
-    planificacion = models.ForeignKey(Planificacion, on_delete=models.CASCADE, related_name='seguimientos')
+    planificacion = models.ForeignKey(Planificacion, on_delete=models.CASCADE, related_name='seguimientos', null=True, blank=True)
     calificaciones = models.IntegerField(null = True)
     asistencia = models.CharField(max_length=255)
     anotaciones = models.CharField(max_length=255)
