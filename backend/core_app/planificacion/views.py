@@ -6,6 +6,7 @@ import pdfplumber
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import ValidationError
 from .models import Planificacion
 from .serializers import PlanificacionSerializer, RegisterPlanificacionSerializer
 from curso.models import Curso
@@ -27,11 +28,11 @@ class RegisterPlanificacionView(generics.CreateAPIView):
             serializer.is_valid(raise_exception=True)
             planificacion = serializer.save()
             return Response({
-                'planificacion_id': planificacion.id
+                'planificacion': PlanificacionSerializer(planificacion, context=self.get_serializer_context()).data
             }, status=status.HTTP_201_CREATED)
-        except IntegrityError as e:
-            logger.error(f"IntegrityError occurred: {e}")
-            return Response({'error': 'La materia ya tiene una planificación.'}, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as e:
+            logger.error(f"ValidationError occurred: {e}")
+            return Response({'error': e.detail}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             logger.error(f"Error occurred: {e}")
             return Response({'error': 'An error occurred while processing your request.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

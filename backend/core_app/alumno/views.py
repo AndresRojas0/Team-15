@@ -11,7 +11,7 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-class RegisterAlumnoView(generics.CreateAPIView):
+class RegisterAlumnosView(generics.CreateAPIView):
     queryset = Alumno.objects.all()
     serializer_class = RegisterAlumnoSerializer
     permission_classes = [IsAuthenticated]
@@ -67,3 +67,21 @@ class ProcessAlumnoExcelView(generics.CreateAPIView):
             logger.error(f"Error occurred: {e}")
             return Response({'error': 'An error occurred while processing your request.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+
+class RegisterAlumnoView(generics.CreateAPIView):
+    queryset = Alumno.objects.all()
+    serializer_class = RegisterAlumnoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            alumno = serializer.save()
+            return Response({
+                'alumno': AlumnoSerializer(alumno).data
+            }, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            logger.error(f"Error occurred: {e}")
+            return Response({'error': 'An error occurred while processing your request.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

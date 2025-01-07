@@ -28,5 +28,6 @@ urlpatterns = [
     path('seguimiento/', include('seguimiento.urls') ),
     path('tema/', include('tema.urls') ),
     path('subtema/', include('subtema.urls') ),
+    path('subtema_anual/', include('subtema_anual.urls') ),
 ]
 

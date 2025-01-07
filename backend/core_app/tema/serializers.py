@@ -8,7 +8,7 @@ class RegisterTemaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tema
-        fields = ['id', 'tema', 'subtemas']
+        fields = ['id', 'tema', 'unidad', 'subtemas']
 
 
 
@@ -17,4 +17,10 @@ class TemaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tema
-        fields = ['id', 'nombre', 'fecha_inicio', 'fecha_fin', 'subtemas']
+        fields = ['id', 'id_planificacion', 'nombre', 'unidad', 'fecha_inicio', 'fecha_fin', 'subtemas']
+
+
+class RegisterOnlyTemaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tema
+        fields = ['id', 'nombre', 'unidad', 'fecha_inicio', 'fecha_fin', 'id_planificacion']

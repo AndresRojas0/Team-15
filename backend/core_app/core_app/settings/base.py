@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'seguimiento',
     'tema',
     'subtema',
+    'subtema_anual',
 ]
 
 REST_FRAMEWORK = {
