@@ -42,6 +42,11 @@ INSTALLED_APPS = [
     'tema',
     'subtema',
     'subtema_anual',
+    'periodo',
+    'sistema_notas',
+    'tipo_nota_binario',
+    'tipo_nota_numerico',
+    'tipo_nota_conceptual',
 ]
 
 REST_FRAMEWORK = {

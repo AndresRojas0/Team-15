@@ -7,14 +7,17 @@ from rest_framework.decorators import action
 from rest_framework import status
 
 class TemaViewSet(viewsets.ModelViewSet):
-    queryset = Tema.objects.all()
     serializer_class = TemaSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        user = self.request.user
+        return Tema.objects.filter(id_planificacion__materia__curso__institucion__docente=user)
+
     @action(detail=False, methods=['get'])
     def get_temas(self, request):
-        user = request.user
-        temas = Tema.objects.filter(user=user)
+        user = self.request.user
+        temas = Tema.objects.filter(id_planificacion__materia__curso__institucion__docente=user)
         serializer = TemaSerializer(temas, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     

@@ -45,13 +45,12 @@ class RegisterInstitucionView(generics.CreateAPIView):
 
 
 class ListInstitucionView(generics.ListAPIView):
-    queryset = Institucion.objects.all()
     serializer_class = InstitucionSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = Institucion.objects.filter(docente=self.request.user)
-        return queryset
+        user = self.request.user
+        return Institucion.objects.filter(docente=user)
     
 
 class UpdateInstitucionView(generics.UpdateAPIView):

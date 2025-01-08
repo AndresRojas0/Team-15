@@ -56,7 +56,10 @@ class RegisterMateriaView(generics.CreateAPIView):
     
 
 class ListMateriaView(generics.ListAPIView):
-    queryset = Materia.objects.all()
     serializer_class = MateriaSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return Materia.objects.filter(curso__institucion__docente=user)
 

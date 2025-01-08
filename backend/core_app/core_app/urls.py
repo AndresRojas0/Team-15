@@ -29,5 +29,7 @@ urlpatterns = [
     path('tema/', include('tema.urls') ),
     path('subtema/', include('subtema.urls') ),
     path('subtema_anual/', include('subtema_anual.urls') ),
+    path('sistema_notas/', include('sistema_notas.urls') ),
+    path('tipo_nota_numerico/', include('tipo_nota_numerico.urls') ),
 ]
 

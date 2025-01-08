@@ -13,44 +13,11 @@ class RegisterCursoView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        auth_header = request.headers.get('Authorization')
-        if not auth_header:
-            return Response({'error': 'Authorization header is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            token_type, token = auth_header.split()
-            if token_type.lower() != 'bearer':
-                return Response({'error': 'Invalid token type'}, status=status.HTTP_400_BAD_REQUEST)
-        except ValueError:
-            return Response({'error': 'Invalid authorization header format'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            access = AccessToken(token)
-            user_id = access['user_id']
-        except TokenError:
-            return Response({'error': 'Token is expired or invalid'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        data = request.data.copy()
-        institucion_id = data.get('institucion_id')
-        if not institucion_id:
-            return Response({'error': 'Institution ID is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            institucion = Institucion.objects.get(id=institucion_id, docente_id=user_id)
-        except Institucion.DoesNotExist:
-            return Response({'error': 'Institution not found or you do not have permission to add a course to this institution'}, status=status.HTTP_404_NOT_FOUND)
-        
-        serializer = self.get_serializer(data=data)
-        try:
-            serializer.is_valid(raise_exception=True)
-            curso = serializer.save()
-        except IntegrityError:
-            return Response({'error': 'A course with this name already exists for this institution'}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({
-            'curso': CursoSerializer(curso).data
-        }, status=status.HTTP_201_CREATED)
-    
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 class UpdateCursoView(generics.UpdateAPIView):
     queryset = Curso.objects.all()
