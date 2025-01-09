@@ -4,4 +4,4 @@ from .models import TipoNotaConceptual
 class TipoNotaConceptualSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoNotaConceptual
-        fields = ['id', 'nombre', 'valoracion', 'sistema_notas_id']
+        fields = '__all__'

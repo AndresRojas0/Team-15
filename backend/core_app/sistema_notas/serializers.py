@@ -9,31 +9,52 @@ from curso.models import Curso
 from sistema_notas.models import SistemaNotas
 
 class SistemaNotasSerializer(serializers.ModelSerializer):
-    tipo_nota_numerico = TipoNotaNumericoSerializer(read_only=True)
-    tipo_nota_binario = TipoNotaBinarioSerializer(read_only=True)
-    tipo_nota_conceptual = TipoNotaConceptualSerializer(many=True, read_only=True)
     curso_id = serializers.PrimaryKeyRelatedField(queryset=Curso.objects.all(), source='curso')
     tipo_nota_examen = TipoNotaNumericoSerializer(read_only=True)
-    formato_actitudinal = TipoNotaConceptualSerializer(many=True, read_only=True) # test
+    formato_nota_tarea = serializers.SerializerMethodField()
+    formato_actitudinal = TipoNotaConceptualSerializer(many=True, read_only=True)
 
     class Meta:
         model = SistemaNotas
-        fields = ['id', 'curso_id', 'porcentaje_examenes', 'porcentaje_tareas', 'porcentaje_actitudinal', 'tipo_nota_tarea', 'tipo_nota_numerico', 'tipo_nota_binario', 'tipo_nota_conceptual', 'tipo_nota_examen', 'formato_actitudinal']
+        fields = ['id', 'curso_id', 'porcentaje_examenes', 'porcentaje_tareas', 'porcentaje_actitudinal', 'tipo_nota_tarea', 'tipo_nota_examen', 'formato_nota_tarea', 'formato_actitudinal', 'falta_justificada']
+
+    def get_formato_nota_tarea(self, instance):
+        if instance.tipo_nota_tarea == 'numerico':
+            return TipoNotaNumericoSerializer(instance.tipo_nota_numerico).data
+        elif instance.tipo_nota_tarea == 'binario':
+            return TipoNotaBinarioSerializer(instance.tipo_nota_binario).data
+        elif instance.tipo_nota_tarea == 'conceptual':
+            formato_nota_tarea = instance.tipo_nota_conceptual.filter(tipo='tarea')
+            return TipoNotaConceptualSerializer(formato_nota_tarea, many=True).data
+        return None
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['formato_nota_tarea'] = self.get_formato_nota_tarea(instance)
+        formato_actitudinal = instance.tipo_nota_conceptual.filter(tipo='actitudinal')
+        representation['formato_actitudinal'] = TipoNotaConceptualSerializer(formato_actitudinal, many=True).data
+        if instance.tipo_nota_examen:
+            representation['formato_nota_examen'] = TipoNotaNumericoSerializer(instance.tipo_nota_examen).data
+        escala_asistencia = instance.tipo_nota_conceptual.filter(tipo='asistencia')
+        representation['escala_asistencia'] = TipoNotaConceptualSerializer(escala_asistencia, many=True).data
+        return representation
 
 class RegisterSistemaNotasSerializer(serializers.ModelSerializer):
     curso_id = serializers.PrimaryKeyRelatedField(queryset=Curso.objects.all(), source='curso')
     formato_nota_tarea = serializers.JSONField(write_only=True, required=False)
     formato_nota_examen = serializers.JSONField(write_only=True, required=False)
     formato_actitudinal = serializers.JSONField(write_only=True, required=False)
+    escala_asistencia = serializers.JSONField(write_only=True, required=False)
 
     class Meta:
         model = SistemaNotas
-        fields = ['id', 'curso_id', 'porcentaje_examenes', 'porcentaje_tareas', 'porcentaje_actitudinal', 'tipo_nota_tarea', 'formato_nota_tarea', 'formato_nota_examen', 'formato_actitudinal']
+        fields = ['id', 'curso_id', 'porcentaje_examenes', 'porcentaje_tareas', 'porcentaje_actitudinal', 'tipo_nota_tarea', 'formato_nota_tarea', 'formato_nota_examen', 'formato_actitudinal', 'escala_asistencia', 'falta_justificada']
 
     def create(self, validated_data):
         formato_nota_tarea_data = validated_data.pop('formato_nota_tarea', None)
         formato_nota_examen_data = validated_data.pop('formato_nota_examen', None)
-        formato_actitudinal_data = validated_data.pop('formato_actitudinal', None) # test
+        formato_actitudinal_data = validated_data.pop('formato_actitudinal', None)
+        escala_asistencia_data = validated_data.pop('escala_asistencia', None)
 
         sistema_notas = SistemaNotas.objects.create(**validated_data)
         
@@ -45,20 +66,40 @@ class RegisterSistemaNotasSerializer(serializers.ModelSerializer):
             sistema_notas.tipo_nota_binario = tipo_nota_binario
         elif validated_data.get('tipo_nota_tarea') == 'conceptual' and formato_nota_tarea_data:
             for nombre, valoracion in formato_nota_tarea_data.items():
-                TipoNotaConceptual.objects.create(nombre=nombre, valoracion=valoracion, sistema_notas=sistema_notas)
+                TipoNotaConceptual.objects.create(nombre=nombre, valoracion=valoracion, sistema_notas=sistema_notas, tipo='tarea')
         
         if formato_nota_examen_data:
             tipo_nota_examen = TipoNotaNumerico.objects.create(**formato_nota_examen_data, es_un_examen=True)
             sistema_notas.tipo_nota_examen = tipo_nota_examen
         
-        # test
         if formato_actitudinal_data:
             for nombre, valoracion in formato_actitudinal_data.items():
-                TipoNotaConceptual.objects.create(nombre=nombre, valoracion=valoracion, sistema_notas=sistema_notas)
+                TipoNotaConceptual.objects.create(nombre=nombre, valoracion=valoracion, sistema_notas=sistema_notas, tipo='actitudinal')
+        
+        if escala_asistencia_data:
+            for nombre, valoracion in escala_asistencia_data.items():
+                TipoNotaConceptual.objects.create(nombre=nombre, valoracion=valoracion, sistema_notas=sistema_notas, tipo='asistencia')
 
         sistema_notas.save()
         return sistema_notas
 
+    def get_formato_nota_tarea(self, instance):
+        if instance.tipo_nota_tarea == 'numerico':
+            return TipoNotaNumericoSerializer(instance.tipo_nota_numerico).data
+        elif instance.tipo_nota_tarea == 'binario':
+            return TipoNotaBinarioSerializer(instance.tipo_nota_binario).data
+        elif instance.tipo_nota_tarea == 'conceptual':
+            formato_nota_tarea = instance.tipo_nota_conceptual.filter(tipo='tarea')
+            return TipoNotaConceptualSerializer(formato_nota_tarea, many=True).data
+        return None
+
     def to_representation(self, instance):
-        serializer = SistemaNotasSerializer(instance)
-        return serializer.data
+        representation = super().to_representation(instance)
+        representation['formato_nota_tarea'] = self.get_formato_nota_tarea(instance)
+        formato_actitudinal = instance.tipo_nota_conceptual.filter(tipo='actitudinal')
+        representation['formato_actitudinal'] = TipoNotaConceptualSerializer(formato_actitudinal, many=True).data
+        if instance.tipo_nota_examen:
+            representation['formato_nota_examen'] = TipoNotaNumericoSerializer(instance.tipo_nota_examen).data
+        escala_asistencia = instance.tipo_nota_conceptual.filter(tipo='asistencia')
+        representation['escala_asistencia'] = TipoNotaConceptualSerializer(escala_asistencia, many=True).data
+        return representation

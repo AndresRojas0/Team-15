@@ -32,5 +32,6 @@ urlpatterns = [
     path('sistema_notas/', include('sistema_notas.urls') ),
     path('tipo_nota_numerico/', include('tipo_nota_numerico.urls') ),
     path('planificacion_mensual/', include('planificacion_mensual.urls') ),
+    # path('asistencia/', include('asistencia.urls') ),
 ]
 
