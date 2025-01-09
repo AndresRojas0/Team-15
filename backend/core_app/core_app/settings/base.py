@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'tipo_nota_binario',
     'tipo_nota_numerico',
     'tipo_nota_conceptual',
+    'planificacion_mensual',
 ]
 
 REST_FRAMEWORK = {

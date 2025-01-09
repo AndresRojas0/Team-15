@@ -1,5 +1,6 @@
 from django.db import IntegrityError
 from rest_framework import serializers
+from planificacion_mensual.serializers import PlanificacionMensualSerializer
 from .models import Planificacion
 from materia.models import Materia
 from tema.serializers import RegisterTemaSerializer, TemaSerializer
@@ -8,10 +9,11 @@ from subtema.models import Subtema
 
 class PlanificacionSerializer(serializers.ModelSerializer):
     temas = TemaSerializer(many=True, read_only=True)
+    planificacion_mensual = PlanificacionMensualSerializer(many=True, read_only=True)
 
     class Meta:
         model = Planificacion
-        fields = ['id', 'materia_id', 'fecha_inicio', 'fecha_fin', 'temas']
+        fields = ['id', 'materia_id', 'fecha_inicio', 'fecha_fin', 'planificacion_mensual', 'temas']
 
 1
 

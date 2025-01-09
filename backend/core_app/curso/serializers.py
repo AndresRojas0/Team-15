@@ -30,7 +30,7 @@ class RegisterCursoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Curso
-        fields = ['nombre', 'institucion_id', 'duracion', 'periodos']
+        fields = ['id', 'nombre', 'institucion_id', 'duracion', 'periodos']
 
     def create(self, validated_data):
         periodos_data = validated_data.pop('periodos')
