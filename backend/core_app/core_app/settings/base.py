@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'tipo_nota_conceptual',
     'planificacion_mensual',
     'asistencia',
+    'recurso',
 ]
 
 REST_FRAMEWORK = {
