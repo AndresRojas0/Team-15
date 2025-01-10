@@ -9,20 +9,13 @@ class RecursoSerializer(serializers.ModelSerializer):
         model = Recurso
         fields = ['id', 'curso_id', 'nombre', 'descripcion', 'url']
 
-class RegisterRecursoSerializer(serializers.ModelSerializer):
-    curso_id = serializers.PrimaryKeyRelatedField(queryset=Curso.objects.all(), source='curso')
+class RegisterRecursoSerializer(serializers.Serializer):
+    recursos = RecursoSerializer(many=True)
 
-    class Meta:
-        model = Recurso
-        fields = ['curso_id', 'nombre', 'descripcion', 'url']
-
-    def validate(self, data):
-        curso_id = data.get('curso')
-        nombre = data.get('nombre')
-        descripcion = data.get('descripcion')
-        url = data.url('url')
-        if not curso_id:
-            raise serializers.ValidationError("Course ID is required")
-        if not nombre:
-            raise serializers.ValidationError("Name is required")
-        return data
+    def create(self, validated_data):
+        recursos_data = validated_data.pop('recursos')
+        recursos = []
+        for recurso_data in recursos_data:
+            recurso = Recurso.objects.create(**recurso_data)
+            recursos.append(recurso)
+        return {'recursos': recursos}

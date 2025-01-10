@@ -14,4 +14,4 @@ class Recurso(models.Model):
         super(Recurso, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.nombre} {self.descripcion}, {self.url}"
+        return f"{self.nombre} {self.descripcion} {self.url}"
