@@ -25,7 +25,6 @@ urlpatterns = [
     path('materia/', include('materia.urls') ),
     path('alumno/', include('alumno.urls') ),
     path('planificacion/', include('planificacion.urls') ),
-    path('seguimiento/', include('seguimiento.urls') ),
     path('tema/', include('tema.urls') ),
     path('subtema/', include('subtema.urls') ),
     path('subtema_anual/', include('subtema_anual.urls') ),
@@ -34,5 +33,11 @@ urlpatterns = [
     path('planificacion_mensual/', include('planificacion_mensual.urls') ),
     path('recurso/', include('recurso.urls') ),
     # path('asistencia/', include('asistencia.urls') ),
+    path('tarea_asignada/', include('tarea_asignada.urls') ),
+    path('alumno_tarea/', include('alumno_tarea.urls') ),
+    path('examen_asignado/', include('examen_asignado.urls') ),
+    path('alumno_examen/', include('alumno_examen.urls') ),
+    path('alumno_actitudinal/', include('alumno_actitudinal.urls') ),
+    path('alumno_asistencia/', include('alumno_asistencia.urls') ),
 ]
 

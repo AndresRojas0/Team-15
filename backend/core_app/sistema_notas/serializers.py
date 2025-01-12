@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from asistencia.models import Asistencia
+from asistencia.serializers import AsistenciaSerializer
 from tipo_nota_conceptual.serializers import TipoNotaConceptualSerializer
 from tipo_nota_conceptual.models import TipoNotaConceptual
 from tipo_nota_numerico.models import TipoNotaNumerico
@@ -13,10 +15,11 @@ class SistemaNotasSerializer(serializers.ModelSerializer):
     tipo_nota_examen = TipoNotaNumericoSerializer(read_only=True)
     formato_nota_tarea = serializers.SerializerMethodField()
     formato_actitudinal = TipoNotaConceptualSerializer(many=True, read_only=True)
+    asistencia = AsistenciaSerializer()
 
     class Meta:
         model = SistemaNotas
-        fields = ['id', 'curso_id', 'porcentaje_examenes', 'porcentaje_tareas', 'porcentaje_actitudinal', 'tipo_nota_tarea', 'tipo_nota_examen', 'formato_nota_tarea', 'formato_actitudinal', 'falta_justificada']
+        fields = ['id', 'curso_id', 'porcentaje_examenes', 'porcentaje_tareas', 'porcentaje_actitudinal', 'tipo_nota_tarea', 'tipo_nota_examen', 'formato_nota_tarea', 'formato_actitudinal', 'falta_justificada', 'asistencia']
 
     def get_formato_nota_tarea(self, instance):
         if instance.tipo_nota_tarea == 'numerico':
@@ -45,10 +48,12 @@ class RegisterSistemaNotasSerializer(serializers.ModelSerializer):
     formato_nota_examen = serializers.JSONField(write_only=True, required=False)
     formato_actitudinal = serializers.JSONField(write_only=True, required=False)
     escala_asistencia = serializers.JSONField(write_only=True, required=False)
+    asistencia = AsistenciaSerializer()
+
 
     class Meta:
         model = SistemaNotas
-        fields = ['id', 'curso_id', 'porcentaje_examenes', 'porcentaje_tareas', 'porcentaje_actitudinal', 'tipo_nota_tarea', 'formato_nota_tarea', 'formato_nota_examen', 'formato_actitudinal', 'escala_asistencia', 'falta_justificada']
+        fields = ['id', 'curso_id', 'porcentaje_examenes', 'porcentaje_tareas', 'porcentaje_actitudinal', 'tipo_nota_tarea', 'formato_nota_tarea', 'formato_nota_examen', 'formato_actitudinal', 'escala_asistencia', 'falta_justificada', 'asistencia']
 
     def create(self, validated_data):
         formato_nota_tarea_data = validated_data.pop('formato_nota_tarea', None)
@@ -56,7 +61,10 @@ class RegisterSistemaNotasSerializer(serializers.ModelSerializer):
         formato_actitudinal_data = validated_data.pop('formato_actitudinal', None)
         escala_asistencia_data = validated_data.pop('escala_asistencia', None)
 
-        sistema_notas = SistemaNotas.objects.create(**validated_data)
+        # sistema_notas = SistemaNotas.objects.create(**validated_data)
+        asistencia_data = validated_data.pop('asistencia')
+        asistencia = Asistencia.objects.create(**asistencia_data)
+        sistema_notas = SistemaNotas.objects.create(asistencia=asistencia, **validated_data)
         
         if validated_data.get('tipo_nota_tarea') == 'numerico' and formato_nota_tarea_data:
             tipo_nota_numerico = TipoNotaNumerico.objects.create(**formato_nota_tarea_data, es_un_examen=False)

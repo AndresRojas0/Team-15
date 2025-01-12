@@ -38,7 +38,6 @@ INSTALLED_APPS = [
     'materia',
     'alumno',
     'planificacion',
-    'seguimiento',
     'tema',
     'subtema',
     'subtema_anual',
@@ -50,6 +49,12 @@ INSTALLED_APPS = [
     'planificacion_mensual',
     'asistencia',
     'recurso',
+    'tarea_asignada',
+    'alumno_tarea',
+    'examen_asignado',
+    'alumno_examen',
+    'alumno_actitudinal',
+    'alumno_asistencia',
 ]
 
 REST_FRAMEWORK = {

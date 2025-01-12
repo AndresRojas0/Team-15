@@ -6,8 +6,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import AccessToken, TokenError
 from curso.models import Curso
 from .models import Materia
-from .serializers import MateriaSerializer, RegisterMateriaSerializer
+from .serializers import DeleteSerializer, MateriaSerializer, RegisterMateriaSerializer, UpdateSerializer
 from django.db import IntegrityError
+from rest_framework.exceptions import PermissionDenied
 
 
 class RegisterMateriaView(generics.CreateAPIView):
@@ -63,3 +64,30 @@ class ListMateriaView(generics.ListAPIView):
         user = self.request.user
         return Materia.objects.filter(curso__institucion__docente=user)
 
+
+class UpdateMateriaView(generics.UpdateAPIView):
+    queryset = Materia.objects.all()
+    serializer_class = UpdateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.curso.institucion.docente != request.user:
+            raise PermissionDenied('No tienes permiso para realizar esta acción.')
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+
+class DeleteMateriaView(generics.DestroyAPIView):
+    queryset = Materia.objects.all()
+    serializer_class = DeleteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.curso.institucion.docente != request.user:
+            raise PermissionDenied('No tienes permiso para realizar esta acción.')
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)

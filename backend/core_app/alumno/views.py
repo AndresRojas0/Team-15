@@ -2,12 +2,13 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Alumno
-from .serializers import AlumnoSerializer, RegisterAlumnoSerializer
+from .serializers import AlumnoSerializer, RegisterAlumnoSerializer, RegisterAlumnoSingularSerializer, UpdateAlumnoSerializer
 from curso.models import Curso
-from institucion.models import Institucion
 import logging
 from rest_framework.parsers import MultiPartParser, FormParser
 import pandas as pd
+from rest_framework.exceptions import PermissionDenied
+
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +72,7 @@ class ProcessAlumnoExcelView(generics.CreateAPIView):
 
 class RegisterAlumnoView(generics.CreateAPIView):
     queryset = Alumno.objects.all()
-    serializer_class = RegisterAlumnoSerializer
+    serializer_class = RegisterAlumnoSingularSerializer
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
@@ -85,3 +86,32 @@ class RegisterAlumnoView(generics.CreateAPIView):
         except Exception as e:
             logger.error(f"Error occurred: {e}")
             return Response({'error': 'An error occurred while processing your request.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class UpdateAlumnoView(generics.UpdateAPIView):
+    queryset = Alumno.objects.all()
+    serializer_class = UpdateAlumnoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.curso.institucion.docente != request.user:
+            raise PermissionDenied('No tienes permiso para realizar esta acción')
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+class DeleteAlumnoView(generics.DestroyAPIView):
+    queryset = Alumno.objects.all()
+    serializer_class = AlumnoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.curso.institucion.docente != request.user:
+            raise PermissionDenied('No tienes permiso para realizar esta acción')
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)

@@ -1,9 +1,10 @@
 from django.urls import path
-from .views import SubtemaAnualViewSet, ListSubtemaAnualView, BulkCreateSubtemaAnualView
+from .views import DeleteSubtemaAnualView, SubtemaAnualViewSet, ListSubtemaAnualView, BulkCreateSubtemaAnualView, UpdateSubtemaAnualView
 
 urlpatterns = [
     path('register/', SubtemaAnualViewSet.as_view({'post': 'create'})),
-    path('update/<int:pk>/', SubtemaAnualViewSet.as_view({'put': 'update'})),
     path('list/', ListSubtemaAnualView.as_view(), name='list-subtemas-anuales'),
     path('list-register/', BulkCreateSubtemaAnualView.as_view(), name='bulk-create-subtemas-anuales'),
+    path('update/<int:pk>/', UpdateSubtemaAnualView.as_view(), name='update-subtema-anual'),
+    path('delete/<int:pk>/', DeleteSubtemaAnualView.as_view(), name='delete-subtema-anual'),
 ]

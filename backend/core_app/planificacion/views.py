@@ -1,6 +1,5 @@
 from io import BytesIO
 from django.conf import settings
-from django.db import IntegrityError
 import docx
 import pdfplumber
 from rest_framework import generics, status
@@ -8,11 +7,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from .models import Planificacion
-from .serializers import PlanificacionSerializer, RegisterPlanificacionSerializer
+from .serializers import DeletePlanificacionSerializer, PlanificacionSerializer, RegisterPlanificacionSerializer, UpdatePlanificacionSerializer
 from curso.models import Curso
 import logging
 from rest_framework.parsers import MultiPartParser, FormParser
 import json
+from rest_framework.exceptions import PermissionDenied
 
 logger = logging.getLogger(__name__)
 
@@ -142,3 +142,32 @@ class PDFExtractTextView(generics.CreateAPIView):
             for page in pdf.pages:
                 text += page.extract_text()  # Extraemos el texto de cada página
         return text
+    
+
+class UpdatePlanificacionView(generics.UpdateAPIView):
+    queryset = Planificacion.objects.all()
+    serializer_class = UpdatePlanificacionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.materia.curso.institucion.docente != request.user:
+            raise PermissionDenied("No tienes permiso para modificar esta planificación")
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+
+class DeletePlanificacionView(generics.DestroyAPIView):
+    queryset = Planificacion.objects.all()
+    serializer_class = DeletePlanificacionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user = self.request.user
+        if instance.materia.curso.institucion.docente != user:
+            raise PermissionDenied("No tienes permiso para eliminar esta planificación")
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)

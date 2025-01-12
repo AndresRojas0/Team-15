@@ -44,3 +44,17 @@ class RegisterPlanificacionSerializer(serializers.ModelSerializer):
         except IntegrityError:
             raise serializers.ValidationError({"unidad": "Cada unidad debe ser única dentro de una planificación."})
         return planificacion
+    
+
+class UpdatePlanificacionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Planificacion
+        fields = '__all__'
+
+
+class DeletePlanificacionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Planificacion
+        fields = '__all__'

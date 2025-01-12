@@ -24,3 +24,5 @@ class RegisterOnlyTemaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tema
         fields = ['id', 'nombre', 'unidad', 'fecha_inicio', 'fecha_fin', 'id_planificacion']
+
+    

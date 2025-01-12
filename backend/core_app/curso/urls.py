@@ -3,7 +3,7 @@ from .views import DeleteCursoView, ListCursoView, RegisterCursoView, UpdateCurs
 
 urlpatterns = [
     path('register/', RegisterCursoView.as_view(), name='register_curso'),
-    path('update/', UpdateCursoView.as_view(), name='update_curso'),
+    path('update/<int:pk>/', UpdateCursoView.as_view(), name='update_curso'),
     path('list/', ListCursoView.as_view(), name='list_curso'),
     path('delete/<int:pk>/', DeleteCursoView.as_view(), name='delete_curso'),
 ]
