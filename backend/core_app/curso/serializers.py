@@ -12,7 +12,7 @@ from .models import Curso
 class CursoSerializer(serializers.ModelSerializer):
     materias = MateriaSerializer(many=True, read_only=True)
     periodos = PeriodoSerializer(many=True, read_only=True)
-    sistema_notas = SistemaNotasSerializer(many=True, read_only=True)
+    sistema_notas = SistemaNotasSerializer(read_only=True)
     alumnos = AlumnoSerializer(many=True, read_only=True)
     alumno_asistencia = AlumnoAsistenciaSerializer(many=True, read_only=True)
 

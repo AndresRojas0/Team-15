@@ -48,13 +48,13 @@ INSTALLED_APPS = [
     'tipo_nota_conceptual',
     'planificacion_mensual',
     'asistencia',
-    'recurso',
     'tarea_asignada',
     'alumno_tarea',
     'examen_asignado',
     'alumno_examen',
     'alumno_actitudinal',
     'alumno_asistencia',
+    'planificacion_diaria',
 ]
 
 REST_FRAMEWORK = {
@@ -200,3 +200,10 @@ MODEL = genai.GenerativeModel(
     model_name="gemini-1.5-flash-8b",
     generation_config=GENERATION_CONFIG,
 )
+
+
+# media
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+PALPROFE_ICON_URL = env('PALPROFE_ICON_URL')

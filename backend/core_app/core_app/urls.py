@@ -31,13 +31,12 @@ urlpatterns = [
     path('sistema_notas/', include('sistema_notas.urls') ),
     path('tipo_nota_numerico/', include('tipo_nota_numerico.urls') ),
     path('planificacion_mensual/', include('planificacion_mensual.urls') ),
-    path('recurso/', include('recurso.urls') ),
-    # path('asistencia/', include('asistencia.urls') ),
     path('tarea_asignada/', include('tarea_asignada.urls') ),
     path('alumno_tarea/', include('alumno_tarea.urls') ),
     path('examen_asignado/', include('examen_asignado.urls') ),
     path('alumno_examen/', include('alumno_examen.urls') ),
     path('alumno_actitudinal/', include('alumno_actitudinal.urls') ),
     path('alumno_asistencia/', include('alumno_asistencia.urls') ),
+    path('planificacion_diaria/', include('planificacion_diaria.urls') ),
 ]
 

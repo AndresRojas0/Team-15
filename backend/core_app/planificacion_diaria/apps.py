@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class RecursoConfig(AppConfig):
+class PlanificacionDiariaConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'recurso'
+    name = 'planificacion_diaria'

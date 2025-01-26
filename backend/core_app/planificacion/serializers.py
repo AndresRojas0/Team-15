@@ -6,14 +6,16 @@ from materia.models import Materia
 from tema.serializers import RegisterTemaSerializer, TemaSerializer
 from tema.models import Tema
 from subtema.models import Subtema
+from planificacion_diaria.serializers import PlanificacionDiariaSerializer
 
 class PlanificacionSerializer(serializers.ModelSerializer):
     temas = TemaSerializer(many=True, read_only=True)
     planificacion_mensual = PlanificacionMensualSerializer(many=True, read_only=True)
+    planificacion_diaria = PlanificacionDiariaSerializer(many=True, read_only=True)
 
     class Meta:
         model = Planificacion
-        fields = ['id', 'materia_id', 'fecha_inicio', 'fecha_fin', 'planificacion_mensual', 'temas']
+        fields = ['id', 'materia_id', 'fecha_inicio', 'fecha_fin', 'planificacion_mensual', 'temas', 'planificacion_diaria']
 
 1
 

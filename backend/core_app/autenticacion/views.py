@@ -14,8 +14,9 @@ from .serializer import CustomUserSerializer, PasswordResetSerializer
 from rest_framework import generics
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import AccessToken
-from django.core.mail import send_mail, EmailMessage
+from django.core.mail import EmailMessage
 from django.urls import reverse
+from django.conf import settings
 
 class GoogleOAuthService(APIView):
     client_id = settings.GOOGLE_OAUTH_CLIENT_ID
@@ -142,7 +143,7 @@ class RegisterUserView(generics.CreateAPIView):
             <p>Gracias por registrarte. Por favor, hace clic en el siguiente enlace para confirmar tu correo electrónico:</p>
             <a href="{verification_url}">Confirmar correo electrónico</a>
             <br><br>
-            <img src="https://administracionescolar.mx/wp-content/uploads/2023/03/6911306-scaled-2560x1280.jpg" alt="Bienvenido" style="width:300px;height:auto;">
+            <img src="{settings.PALPROFE_ICON_URL}" alt="PalProfe icon" width="300" height="250">
         </body>
         </html>
         """
