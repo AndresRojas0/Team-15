@@ -55,7 +55,8 @@ INSTALLED_APPS = [
     'alumno_actitudinal',
     'alumno_asistencia',
     'planificacion_diaria',
-    'recursos'
+    'recursos',
+    'recurso_url',
 ]
 
 REST_FRAMEWORK = {
