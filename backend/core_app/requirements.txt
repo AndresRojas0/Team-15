@@ -1,0 +1,13 @@
+Django>=3.2,<4.0
+djangorestframework
+djangorestframework-simplejwt
+requests
+pandas
+openpyxl
+django-environ
+django-cors-headers
+google-generativeai
+python-docx
+pdfplumber
+google-cloud-storage
+django-storages

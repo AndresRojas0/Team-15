@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'alumno_actitudinal',
     'alumno_asistencia',
     'planificacion_diaria',
+    'recursos'
 ]
 
 REST_FRAMEWORK = {
@@ -207,3 +208,8 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 PALPROFE_ICON_URL = env('PALPROFE_ICON_URL')
+
+# Google Cloud Storage
+GOOGLE_CLOUD_STORAGE_BUCKET = env('GOOGLE_CLOUD_STORAGE_BUCKET')
+GOOGLE_APPLICATION_CREDENTIALS = env('GOOGLE_APPLICATION_CREDENTIALS')
+DEFAULT_FILE_STORAGE="storages.backends.gcloud.GoogleCloudStorage"
