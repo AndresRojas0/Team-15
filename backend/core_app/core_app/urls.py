@@ -39,5 +39,6 @@ urlpatterns = [
     path('alumno_asistencia/', include('alumno_asistencia.urls') ),
     path('planificacion_diaria/', include('planificacion_diaria.urls') ),
     path('recursos/', include('recursos.urls') ),
+    path('recurso_url/', include('recurso_url.urls') ),
 ]
 
